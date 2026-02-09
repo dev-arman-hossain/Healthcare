@@ -23,21 +23,25 @@ const registerpatient = async (payload: IRegisterPatientPayload) => {
     throw new Error("Failed to register patient");
   }
 
-  const patient = await prisma.$transaction(async (tx) => {
-    const patientProfile = await tx.patient.create({
-      data: {
-        userId: data.user.id,
-        name: payload.name,
-        email: payload.email,
-      },
+  try {
+    const patient = await prisma.$transaction(async (tx) => {
+      const patientProfile = await tx.patient.create({
+        data: {
+          userId: data.user.id,
+          name: payload.name,
+          email: payload.email,
+        },
+      });
+      return patientProfile;
     });
-    return patientProfile;
-  });
 
-  return {
-    ...data,
-    patient,
-  };
+    return {
+      ...data,
+      patient,
+    };
+  } catch (err) {
+    throw new Error("Failed to register patient");
+  }
 };
 
 const loginUser = async (payload: { email: string; password: string }) => {
@@ -53,6 +57,11 @@ const loginUser = async (payload: { email: string; password: string }) => {
     throw new Error("User is blocked");
   }
   if (data.user.isDeleted || data.user.status === Status.DELETED) {
+    await prisma.user.delete({
+      where: {
+        id: data.user.id,
+      },
+    });
     throw new Error("User is Deleted");
   }
 
