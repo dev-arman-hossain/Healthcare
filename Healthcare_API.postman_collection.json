@@ -1,13 +1,33 @@
 {
   "info": {
     "_postman_id": "healthcare-api-collection",
-    "name": "Healthcare API",
-    "description": "API collection for Healthcare project testing",
+    "name": "Healthcare API - Complete Testing Suite",
+    "description": "Comprehensive API collection for Healthcare project with all endpoints and authentication requirements. IMPORTANT: See notes for authentication requirements and limitations.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
+      "name": "✅ API FIXED - AUTHENTICATION REQUIREMENTS",
+      "item": [
+        {
+          "name": "API Documentation & Security",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "📋 AUTHENTICATION REQUIREMENTS (UPDATED):\n\n✅ OPEN ENDPOINTS (No auth required):\n- POST /auth/register - Register new patient\n- POST /auth/login - Login user\n- GET /specialties - Get all specialties (PUBLIC)\n\n🔐 AUTHENTICATED ENDPOINTS:\n- GET /doctors - Requires ANY authentication (checkAuth())\n\n🔐 ADMIN/DOCTOR ONLY:\n- POST /specialties - Requires ADMIN or DOCTOR role\n\n🔐 ADMIN ONLY:\n- DELETE /specialties/:id - Requires ADMIN role\n- POST /users/create-doctor - Requires ADMIN role\n\n✅ FIXES APPLIED:\n1. ✓ Created proper Specialty interface (title, description?, icon?)\n2. ✓ Specialty service now uses ICreateSpecialtyPayload type\n3. ✓ POST /specialties now requires ADMIN/DOCTOR role\n4. ✓ DELETE /specialties now requires ADMIN role\n5. ✓ POST /users/create-doctor now requires ADMIN role\n6. ✓ GET /specialties is now PUBLIC\n7. ✓ Optional fields in Create Doctor interface (profilePhoto, contactNumber, address, currentWorkingPlace)\n8. ✓ GET /doctors requires authentication\n9. ✓ Removed unused imports\n\n📝 NOTES:\n- Gender enum values: MALE, FEMALE, OTHER\n- registrationNumber must be unique\n- All timestamps (createdAt, updatedAt) are auto-generated\n- All IDs are auto-generated with uuid()"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Authentication",
+      "description": "Public authentication endpoints - no authentication required",
       "item": [
         {
           "name": "Register Patient",
@@ -18,10 +38,15 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
-                  "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
-                  "    pm.environment.set('userId', jsonData.data.user.id);",
-                  "    console.log('Tokens saved to environment');",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    }",
+                  "    if (jsonData.data && jsonData.data.refreshToken) {",
+                  "        pm.environment.set('refreshToken', jsonData.data.refreshToken);",
+                  "    }",
+                  "    console.log('Patient registered. Response:', JSON.stringify(jsonData.data, null, 2));",
+                  "} else {",
+                  "    console.log('Registration failed:', pm.response.text());",
                   "}"
                 ]
               }
@@ -37,14 +62,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+              "raw": "{\n  \"name\": \"John Patient\",\n  \"email\": \"john.patient@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
             },
-            "description": "Register a new patient account"
+            "description": "Register a new patient account.\n\nResponse includes:\n- accessToken (stored in environment)\n- refreshToken (stored in environment)\n- patient data\n- user data from auth service\n\nNote: Currently token field may be undefined in response"
           },
           "response": []
         },
@@ -57,9 +82,15 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
-                  "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
-                  "    console.log('Login successful - Tokens saved');",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    }",
+                  "    if (jsonData.data && jsonData.data.refreshToken) {",
+                  "        pm.environment.set('refreshToken', jsonData.data.refreshToken);",
+                  "    }",
+                  "    console.log('Login successful. Response:', JSON.stringify(jsonData.data, null, 2));",
+                  "} else {",
+                  "    console.log('Login failed:', pm.response.text());",
                   "}"
                 ]
               }
@@ -75,14 +106,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+              "raw": "{\n  \"email\": \"john.patient@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
             },
-            "description": "Login user with email and password"
+            "description": "Login user with email and password.\n\nResponse includes:\n- accessToken (stored in environment)\n- refreshToken (stored in environment)\n- User data from auth service\n\nTokens are automatically set as cookies and stored in environment variables"
           },
           "response": []
         }
@@ -90,69 +121,74 @@
     },
     {
       "name": "Specialties",
+      "description": "Medical specialties management. WARNING: POST and DELETE lack authentication middleware",
       "item": [
         {
-          "name": "Create Specialty",
+          "name": "Create Specialty (ADMIN/DOCTOR)",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Cardiology\",\n  \"description\": \"Heart and cardiovascular diseases\",\n  \"icon\": \"heart\"\n}"
+              "raw": "{\n  \"title\": \"Cardiology\",\n  \"description\": \"Heart and cardiovascular system diseases\",\n  \"icon\": \"heart-icon\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/specialties",
               "host": ["{{baseUrl}}"],
               "path": ["specialties"]
             },
-            "description": "Create a new medical specialty. Note: title is required, description and icon are optional"
+            "description": "Create a new medical specialty.\n\n🔐 AUTHENTICATION REQUIRED: ADMIN or DOCTOR role\n\nRequired fields:\n- title (string, unique)\n\nOptional fields:\n- description (string)\n- icon (string)\n\n✅ FIXED:\n- Service now uses ICreateSpecialtyPayload interface\n- Only accepts title, description, and icon (not full Specialty type)\n- Requires proper authentication"
           },
           "response": []
         },
         {
-          "name": "Get All Specialties",
+          "name": "Get All Specialties (PUBLIC)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    var specialties = jsonData.data;",
+                  "    if (specialties && specialties.length > 0) {",
+                  "        pm.environment.set('specialtyId', specialties[0].id);",
+                  "        console.log('First specialty ID set:', specialties[0].id);",
+                  "    }",
+                  "    console.log('Specialties fetched:', specialties.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/specialties",
               "host": ["{{baseUrl}}"],
               "path": ["specialties"]
             },
-            "description": "Fetch all available medical specialties"
+            "description": "Fetch all available medical specialties.\n\n✅ NO AUTHENTICATION REQUIRED (Public endpoint)\n\nAutomatic behavior:\n- First specialty ID is saved to environment for use in other requests\n- Can be accessed by anyone without login"
           },
           "response": []
         },
         {
-          "name": "Delete Specialty",
+          "name": "Delete Specialty (ADMIN only)",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/specialties/{{specialtyId}}",
               "host": ["{{baseUrl}}"],
               "path": ["specialties", "{{specialtyId}}"]
             },
-            "description": "Delete a medical specialty by ID"
+            "description": "Delete a medical specialty by ID."
           },
           "response": []
         }
@@ -160,23 +196,35 @@
     },
     {
       "name": "Doctors",
+      "description": "Doctor management endpoints",
       "item": [
         {
-          "name": "Get All Doctors",
+          "name": "Get All Doctors (Authenticated users)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    console.log('Doctors fetched:', jsonData.data ? jsonData.data.length : 0);",
+                  "    if (jsonData.data && jsonData.data.length > 0) {",
+                  "        console.log('Doctor data structure:', JSON.stringify(jsonData.data[0], null, 2));",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/doctors",
               "host": ["{{baseUrl}}"],
               "path": ["doctors"]
             },
-            "description": "Fetch all registered doctors"
+            "description": "Fetch all registered doctors with their specialties. Requires authentication."
           },
           "response": []
         }
@@ -184,31 +232,28 @@
     },
     {
       "name": "Users",
+      "description": "User management endpoints",
       "item": [
         {
-          "name": "Create Doctor",
+          "name": "Create Doctor (ADMIN only)",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"password\": \"DoctorPassword123!\",\n  \"doctor\": {\n    \"name\": \"Dr. Jane Smith\",\n    \"email\": \"jane.smith@hospital.com\",\n    \"profilePhoto\": \"https://example.com/photo.jpg\",\n    \"contactNumber\": \"+1234567890\",\n    \"address\": \"123 Medical Street, Hospital City\",\n    \"registrationNumber\": \"MD123456\",\n    \"experience\": 10,\n    \"gender\": \"MALE\",\n    \"appointmentFee\": 500.00,\n    \"qualification\": \"MBBS, MD\",\n    \"currentWorkingPlace\": \"Central Hospital\",\n    \"designation\": \"Senior Doctor\",\n    \"averageRating\": 4.5\n  },\n  \"doctorSpecialties\": [\"{{specialtyId}}\"]\n}"
+              "raw": "{\n  \"password\": \"DoctorPass123!\",\n  \"doctor\": {\n    \"name\": \"Dr. Sarah Wilson\",\n    \"email\": \"sarah.wilson@hospital.com\",\n    \"profilePhoto\": \"https://example.com/doctors/sarah.jpg\",\n    \"contactNumber\": \"+1-555-0123\",\n    \"address\": \"456 Medical Plaza, Healthcare City\",\n    \"registrationNumber\": \"MD987654\",\n    \"experience\": 15,\n    \"gender\": \"FEMALE\",\n    \"appointmentFee\": 750.00,\n    \"qualification\": \"MBBS, MD, DM Cardiology\",\n    \"designation\": \"Consultant Cardiologist\",\n    \"averageRating\": 4.8\n  },\n  \"doctorSpecialties\": [\"{{specialtyId}}\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/users/create-doctor",
               "host": ["{{baseUrl}}"],
               "path": ["users", "create-doctor"]
             },
-            "description": "Register a new doctor in the system. Doctor object requires all fields. doctorSpecialties should be an array of specialty IDs."
+            "description": "Register a new doctor. Requires ADMIN role."
           },
           "response": []
         }
