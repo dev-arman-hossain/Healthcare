@@ -1,0 +1,245 @@
+{
+  "info": {
+    "_postman_id": "healthcare-api-collection",
+    "name": "Healthcare API",
+    "description": "API collection for Healthcare project testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
+                  "    pm.environment.set('userId', jsonData.data.user.id);",
+                  "    console.log('Tokens saved to environment');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new patient account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
+                  "    console.log('Login successful - Tokens saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login user with email and password"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Specialties",
+      "item": [
+        {
+          "name": "Create Specialty",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Cardiology\",\n  \"description\": \"Heart and cardiovascular diseases\",\n  \"icon\": \"heart\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/specialties",
+              "host": ["{{baseUrl}}"],
+              "path": ["specialties"]
+            },
+            "description": "Create a new medical specialty. Note: title is required, description and icon are optional"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Specialties",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/specialties",
+              "host": ["{{baseUrl}}"],
+              "path": ["specialties"]
+            },
+            "description": "Fetch all available medical specialties"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Specialty",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/specialties/{{specialtyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["specialties", "{{specialtyId}}"]
+            },
+            "description": "Delete a medical specialty by ID"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Doctors",
+      "item": [
+        {
+          "name": "Get All Doctors",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors"]
+            },
+            "description": "Fetch all registered doctors"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"DoctorPassword123!\",\n  \"doctor\": {\n    \"name\": \"Dr. Jane Smith\",\n    \"email\": \"jane.smith@hospital.com\",\n    \"profilePhoto\": \"https://example.com/photo.jpg\",\n    \"contactNumber\": \"+1234567890\",\n    \"address\": \"123 Medical Street, Hospital City\",\n    \"registrationNumber\": \"MD123456\",\n    \"experience\": 10,\n    \"gender\": \"MALE\",\n    \"appointmentFee\": 500.00,\n    \"qualification\": \"MBBS, MD\",\n    \"currentWorkingPlace\": \"Central Hospital\",\n    \"designation\": \"Senior Doctor\",\n    \"averageRating\": 4.5\n  },\n  \"doctorSpecialties\": [\"{{specialtyId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/create-doctor",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "create-doctor"]
+            },
+            "description": "Register a new doctor in the system. Doctor object requires all fields. doctorSpecialties should be an array of specialty IDs."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "specialtyId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

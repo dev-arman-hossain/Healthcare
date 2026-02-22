@@ -1,6 +1,6 @@
 import { Gender } from "../../../generated/prisma/enums";
 
-export interface IcreateDoctorPayload {
+export interface ICreateDoctorPayload {
   password: string;
   doctor: {
     name: string;

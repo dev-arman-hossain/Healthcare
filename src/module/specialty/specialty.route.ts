@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { SpecialtyController } from "./specialty.controller";
+import { checkAuth } from "../../middleware/checkAuth";
+import { Role } from "../../../generated/prisma/enums";
 
 const router = Router();
 
 router.post("/", SpecialtyController.createSpecialty);
-router.get("/", SpecialtyController.getAllSpecialties);
+router.get("/", checkAuth(Role.DOCTOR),SpecialtyController.getAllSpecialties);
 router.delete("/:id", SpecialtyController.deleteSpecialty);
 
 export const SpecialtyRoute = router;
